@@ -5,6 +5,7 @@ from plone.app.testing import FunctionalTesting
 from plone.app.testing import IntegrationTesting
 from plone.app.testing import PLONE_FIXTURE
 from plone.app.testing import PloneSandboxLayer
+from plone.testing import zope
 from plone.testing import z2
 
 import collective.pyplaywrightdemo
@@ -49,7 +50,7 @@ COLLECTIVE_PYPLAYWRIGHTDEMO_ACCEPTANCE_TESTING = FunctionalTesting(
     bases=(
         COLLECTIVE_PYPLAYWRIGHTDEMO_FIXTURE,
         REMOTE_LIBRARY_BUNDLE_FIXTURE,
-        z2.ZSERVER_FIXTURE,
+        zope.WSGI_SERVER_FIXTURE,
     ),
     name="CollectivePyplaywrightdemoLayer:AcceptanceTesting",
 )
