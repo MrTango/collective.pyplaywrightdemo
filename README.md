@@ -8,6 +8,25 @@ cd collective.pyplaywrightdemo
 ./venv/bin/pytest tests/
 ```
 
+if yopu want to run all tests in parallel, this is the way:
+
+```sh
+./venv/bin/pytest -n auto tests/
+
+```
+
+or to only use 5 CPU cores:
+
+```sh
+./venv/bin/pytest -n 5 tests/
+
+```
+
+this can speed up the process if you have way less tests, then you have CPU threads.
+With auto it will create the maximum amount of workers, for me 16 for example, even if i only have two tests.
+This step take a bit time, so a call with `-n 2` would be a bit faster.
+
+
 ```sh
 tox -e e2e
 ```
