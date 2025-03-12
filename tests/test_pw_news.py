@@ -46,7 +46,7 @@ class TestPwEvents:
         page.get_by_role("textbox", name="Title •").click()
         page.get_by_role("textbox", name="Title •").fill("News aggregator")
         page.get_by_role("link", name="Select criteria").click()
-        page.locator("#select2-result-label-19").click()
+        page.locator(".select2-option-portal-type").click()
         page.get_by_role("group", name="Default").get_by_role("list").click()
         page.get_by_role("option", name="News item").click()
         page.get_by_role("link", name="No sorting").click()
