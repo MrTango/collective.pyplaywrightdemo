@@ -1,12 +1,21 @@
-import pytest
-from plone.app.testing import SITE_OWNER_NAME, SITE_OWNER_PASSWORD
-from plone.restapi.testing import RelativeSession
-from pytest_plone import fixtures_factory
-from pythongettext.msgfmt import Msgfmt
-from pythongettext.msgfmt import PoSyntaxError
-from typing import Generator
+import base64
 from pathlib import Path
+from typing import Generator
+
+import pytest
+import transaction
+from playwright.sync_api import Page
+from plone import api
+from plone.app.testing.interfaces import (
+    SITE_OWNER_NAME,
+    SITE_OWNER_PASSWORD,
+    TEST_USER_NAME,
+)
 from plone.testing.zope import WSGI_SERVER_FIXTURE
+from pytest_plone import fixtures_factory
+from pythongettext.msgfmt import Msgfmt, PoSyntaxError
+from zope.component.hooks import setSite
+
 from collective.pyplaywrightdemo.testing import (
     COLLECTIVE_PYPLAYWRIGHTDEMO_ACCEPTANCE_TESTING,
     COLLECTIVE_PYPLAYWRIGHTDEMO_FUNCTIONAL_TESTING,
@@ -25,6 +34,13 @@ globals().update(
         )
     )
 )
+
+
+def generate_basic_authentication_header_value(username: str, password: str) -> str:
+    token = base64.b64encode("{}:{}".format(username, password).encode("utf-8")).decode(
+        "ascii"
+    )
+    return "Basic {}".format(token)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -59,32 +75,45 @@ def plone_url():
 
 
 @pytest.fixture()
-def portal(acceptance):
-    portal = acceptance["portal"]
-    # with transaction.manager:
-        # contents = create_content_tree()
-    yield portal
-    # with transaction.manager:
-    #     for uid in contents[::-1]:
-    #         obj = api.content.get(UID=uid)
-    #         if obj:
-    #             api.content.delete(obj)
+def portal_factory(acceptance ,request):
+    def factory(roles: list, username: str = TEST_USER_NAME):
+        if not roles:
+            roles = ['Member']
+        portal = acceptance["portal"]
+        setSite(portal)
+        with api.env.adopt_roles(["Manager", "Member"]):
+            api.user.grant_roles(
+                username=username,
+                roles=roles,
+            )
+        transaction.commit()
 
+        def cleanup():
+            with api.env.adopt_roles(["Manager", "Member"]):
+                api.user.revoke_roles(
+                    username=username,
+                    roles=roles,
+                )
+            transaction.commit()
 
-@pytest.fixture()
-def request_factory(portal):
-    def factory():
-        url = portal.absolute_url()
-        api_session = RelativeSession(url)
-        api_session.headers.update({"Accept": "application/json"})
-        return api_session
+        request.addfinalizer(cleanup)
+        return portal
 
     return factory
 
 
 @pytest.fixture()
-def manager_request(request_factory):
-    request = request_factory()
-    request.auth = (SITE_OWNER_NAME, SITE_OWNER_PASSWORD)
-    yield request
-    request.auth = ()
+def page_factory(new_context):
+    def factory(
+        username: str = SITE_OWNER_NAME, password: str = SITE_OWNER_PASSWORD
+    ) -> Page:
+        context = new_context(
+            extra_http_headers={
+                "Authorization": generate_basic_authentication_header_value(
+                    username, password
+                ),
+            }
+        )
+        page = context.new_page()
+        return page
+    return factory

@@ -1,9 +1,11 @@
-import re
-import os
 import pytest
-from playwright.sync_api import Page, expect, sync_playwright as pwbrowser
-from plone.app.testing.interfaces import SITE_OWNER_NAME
-from plone.app.testing.interfaces import SITE_OWNER_PASSWORD
+from playwright.sync_api import expect
+from plone.app.testing.interfaces import (
+    SITE_OWNER_NAME,
+    SITE_OWNER_PASSWORD,
+    TEST_USER_NAME,
+    TEST_USER_PASSWORD,
+)
 
 
 # @pytest.fixture(scope="session")
@@ -11,30 +13,18 @@ from plone.app.testing.interfaces import SITE_OWNER_PASSWORD
 #     return {"storage_state": "auth.json"}
 
 
-@pytest.fixture(scope="session")
-def auto_login():
-    def login(plone_url, page: Page):
-        page.goto(f"{plone_url}")
-        page.get_by_role("link", name="Log in").click()
-        page.get_by_role("textbox", name="Login Name •").click()
-        page.get_by_role("textbox", name="Login Name •").fill(f"{SITE_OWNER_NAME}")
-        page.get_by_role("textbox", name="Login Name •").press("Tab")
-        page.get_by_role("textbox", name="Password •").fill(f"{SITE_OWNER_PASSWORD}")
-        page.get_by_role("button", name="Log in").click()
-
-    return login
-
-
 class TestPwEvents:
     @pytest.fixture(autouse=True)
-    def _init(self, portal, plone_url, page: Page, auto_login):
-        self.portal = portal
-        self.plone_url = plone_url
-        auto_login(plone_url, page)
+    def setup(self, portal_factory, page_factory):
+        self.portal = portal_factory(username=TEST_USER_NAME, roles=['Member', 'Contributor'])
+        self.page = page_factory(username=TEST_USER_NAME, password=TEST_USER_PASSWORD)
+        self.plone_url = self.portal.absolute_url()
 
-    def test_events_listing(self, page: Page, auto_login) -> None:
+    def test_events_listing(self) -> None:
         # page.pause()
         # page.locator("h1").click()
+        page = self.page
+        page.goto(f"{self.plone_url}")
         page.get_by_role("link", name="Add new…").click()
         page.get_by_role('link', name='Folder').hover()
         page.screenshot(path="screens/add_folder_events.png")
