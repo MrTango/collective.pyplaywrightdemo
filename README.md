@@ -32,6 +32,7 @@ tox -e e2e
 ```
 
 In `pytest.ini` you can change settings and enable to see the browser for example.
+Make sure that you don't use the `--headed` option, when running the tests with tox!
 
 The following config will enable the chromium browser and slow down the steps, so one can follow them.
 
