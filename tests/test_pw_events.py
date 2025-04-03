@@ -8,21 +8,15 @@ from plone.app.testing.interfaces import (
 )
 
 
-# @pytest.fixture(scope="session")
-# def browser_context_args(browser_context_args, playwright):
-#     return {"storage_state": "auth.json"}
-
-
 class TestPwEvents:
     @pytest.fixture(autouse=True)
-    def setup(self, portal_factory, page_factory):
+    def setup(self, portal_factory, playwright_page_factory):
         self.portal = portal_factory(username=TEST_USER_NAME, roles=['Member', 'Contributor'])
-        self.page = page_factory(username=TEST_USER_NAME, password=TEST_USER_PASSWORD)
+        self.page = playwright_page_factory(username=TEST_USER_NAME, password=TEST_USER_PASSWORD)
         self.plone_url = self.portal.absolute_url()
 
     def test_events_listing(self) -> None:
         # page.pause()
-        # page.locator("h1").click()
         page = self.page
         page.goto(f"{self.plone_url}")
         page.get_by_role("link", name="Add new…").click()
@@ -99,41 +93,42 @@ class TestPwEvents:
         page.get_by_role("link", name="Add new…").click()
         page.get_by_role("link", name="Event", exact=True).click()
         page.get_by_role("textbox", name="Title").click()
-        page.get_by_role("textbox", name="Title").fill("Bucharest Plone Sprint")
+        page.get_by_role("textbox", name="Title").fill("Plone Conference 2025 - Jyväskylä / Finland")
         page.locator('input[name="form\\.widgets\\.IEventBasic\\.start"]').click()
         page.locator('input[name="form\\.widgets\\.IEventBasic\\.start"]').fill(
-            "2025-03-24T13:00"
+            "2025-10-13T13:00"
         )
         page.locator('input[name="form\\.widgets\\.IEventBasic\\.end"]').click()
         page.locator('input[name="form\\.widgets\\.IEventBasic\\.end"]').fill(
-            "2025-03-28T14:00"
+            "2025-10-19T14:00"
         )
         page.get_by_text("Whole Day", exact=True).click()
         page.get_by_role("button", name="Save").click()
-        expect(page.locator("h1")).to_contain_text("Bucharest Plone Sprint")
+        expect(page.locator("h1")).to_contain_text("Plone Conference 2025 - Jyväskylä / Finland")
 
         page.get_by_label("breadcrumb").get_by_role("link", name="Events").click()
+        # page.pause()
         expect(page.locator("#content-core > .entries > *")).to_have_count(2)
 
         page.get_by_role("link", name="Display").click()
         page.locator("#plone-contentmenu-display-event_listing").click()
 
         expect(page.locator("h1")).to_contain_text("Future events")
-        expect(page.locator("#content-core")).to_contain_text("Bucharest Plone Sprint")
+        expect(page.locator("#content-core")).to_contain_text("Plone Conference 2025 - Jyväskylä / Finland")
         expect(page.locator("#content-core")).to_contain_text(
             "Plone-Tagung 2025 in Koblenz"
         )
 
-        expect(page.locator("#content-core .cal_month").nth(0)).to_contain_text("March")
-        expect(page.locator("#content-core .cal_day").nth(0)).to_contain_text("24")
+        expect(page.locator("#content-core .cal_month").nth(0)).to_contain_text("June")
+        expect(page.locator("#content-core .cal_day").nth(0)).to_contain_text("10")
         expect(page.locator("#content-core .cal_wkday").nth(0)).to_contain_text(
-            "Monday"
+            "Tuesday"
         )
 
-        expect(page.locator("#content-core .cal_month").nth(1)).to_contain_text("June")
-        expect(page.locator("#content-core .cal_day").nth(1)).to_contain_text("10")
+        expect(page.locator("#content-core .cal_month").nth(1)).to_contain_text("October")
+        expect(page.locator("#content-core .cal_day").nth(1)).to_contain_text("13")
         expect(page.locator("#content-core .cal_wkday").nth(1)).to_contain_text(
-            "Tuesday"
+            "Monday"
         )
 
         expect(page.locator("#content-core > section > *")).to_have_count(2)

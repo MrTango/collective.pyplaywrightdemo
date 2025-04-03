@@ -10,9 +10,9 @@ from plone.app.testing.interfaces import (
 
 class TestPwNews:
     @pytest.fixture(autouse=True)
-    def setup(self, portal_factory, page_factory) -> None:
+    def setup(self, portal_factory, playwright_page_factory) -> None:
         self.portal = portal_factory(username=TEST_USER_NAME, roles=['Contributor'])
-        self.page = page_factory(username=TEST_USER_NAME, password=TEST_USER_PASSWORD)
+        self.page = playwright_page_factory(username=TEST_USER_NAME, password=TEST_USER_PASSWORD)
         self.plone_url = self.portal.absolute_url()
 
     def test_news_listing(self) -> None:
